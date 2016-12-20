@@ -1,0 +1,26 @@
+{
+  "name": "multi-req",
+  "version": "1.0.0",
+  "description": "Middleware to parse multipart/mixed requests.",
+  "main": "index.coffee",
+  "scripts": {
+    "start": "coffee index.coffee",
+    "test": "./node_modules/mocha/bin/mocha test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dicer": "^0.2.5",
+    "http-parser-js": "^0.4.4",
+    "readable-stream": "^2.1.5"
+  },
+  "devDependencies": {
+    "bluebird": "^3.4.6",
+    "chai": "^3.5.0",
+    "coffee-script": "^1.11.1",
+    "lodash": "^4.16.6",
+    "mimemessage": "^1.0.4",
+    "mocha": "^3.2.0",
+    "request": "^2.78.0"
+  }
+}
