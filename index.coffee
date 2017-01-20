@@ -8,13 +8,14 @@ RE_BOUNDARY = /^multipart\/.+?(?:;\s?boundary=(?:(?:"(.+)")|(?:([^\s]+))))$/i
 parseInto = (dst, boundary, debug) ->
 	d = new dicer { boundary: boundary[1] || boundary[2] }
 	d.pending = []
-
+	position = 0
 	d.on 'part', (p) ->
+		slot = position++
 		b = { headers: {}, method: null, url: null, data: [], _isChangeSet: false }
 
 		onEnd = (part) ->
 			() ->
-				dst.push(part)
+				dst[slot] = (part)
 
 		p.on 'header', (header) ->
 			Object.assign b.headers, header
