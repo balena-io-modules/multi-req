@@ -14,7 +14,7 @@ parseInto = (dst, boundary, debug) ->
 		b = { headers: {}, method: null, url: null, data: [], _isChangeSet: false }
 
 		onEnd = (part) ->
-			() ->
+			->
 				dst[slot] = (part)
 
 		p.on 'header', (header) ->
