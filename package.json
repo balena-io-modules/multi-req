@@ -2,12 +2,13 @@
   "name": "multi-req",
   "version": "1.0.0",
   "description": "Middleware to parse multipart/mixed requests.",
-  "main": "index.coffee",
+  "main": "lib/index.js",
   "scripts": {
-    "start": "coffee index.coffee",
-    "test": "./node_modules/mocha/bin/mocha test"
+    "prepublish": "npm run test && coffee -c lib",
+    "lint": "resin-lint lib",
+    "test": "npm run lint && ./node_modules/mocha/bin/mocha test"
   },
-  "author": "",
+  "author": "Giovanni Garufi",
   "license": "ISC",
   "dependencies": {
     "dicer": "^0.2.5",
@@ -21,6 +22,7 @@
     "lodash": "^4.16.6",
     "mimemessage": "^1.0.4",
     "mocha": "^3.2.0",
-    "request": "^2.78.0"
+    "request": "^2.78.0",
+    "versionist": "^2.8.0"
   }
 }
