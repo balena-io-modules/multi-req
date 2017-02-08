@@ -1,8 +1,8 @@
 expect = require('chai').expect
-http = require('http')
-runBatch = require('./runBatch')
+http = require 'http'
+runBatch = require './runBatch'
 _ = require 'lodash'
-{multiReq} = require('..')
+{multiReq} = require '../lib/index.coffee'
 
 
 describe 'multi-req', () ->
