@@ -6,30 +6,32 @@ _ = require 'lodash'
 
 
 describe 'multi-req', () ->
-  uri = null
+  serverInfo = null
   before (done) ->
     server = createServer()
-    server.listen {host: 'localhost', port: 0}, () ->
-      uri = toURI server.address()
+    server.listen {host: 'localhost', port: 1337}, () ->
+      serverInfo = toURI server.address()
       done()
 
   it 'run batch and check if everything is correctly parsed', () ->
-    runBatch(uri, data)
-    .then (res) -> checkBody(res.body)
+    runBatch(serverInfo, data)
+    .then (res) ->
+      checkBody(res)
 
   it 'shuffle the body to test for race conditions', () ->
-    runBatch(uri, _.shuffle(data))
-    .then (res) -> checkBody(res.body)
+    runBatch(serverInfo, _.shuffle(data))
+    .then (res) -> checkBody(res)
 
   it 'shuffle the body to test for race conditions', () ->
-    runBatch(uri, _.shuffle(data))
-    .then (res) -> checkBody(res.body)
+    runBatch(serverInfo, _.shuffle(data))
+    .then (res) -> checkBody(res)
 
   it 'shuffle the body to test for race conditions', () ->
-    runBatch(uri, _.shuffle(data))
-    .then (res) -> checkBody(res.body)
+    runBatch(serverInfo, _.shuffle(data))
+    .then (res) -> checkBody(res)
 
 checkBody = (body) ->
+  body = JSON.parse(body)
   expect(body).to.be.lengthOf(4)
   _.map body, (b) ->
     if b._isChangeSet
@@ -49,7 +51,7 @@ createServer = () ->
       res.end(if err then err.message else JSON.stringify(req.batch))
 
 toURI = (serverInfo) ->
-  return 'http://' + serverInfo.address + ':' + serverInfo.port
+  return 'http://' + serverInfo.address + ':' + serverInfo.port + '/'
 
 
 dev1 =
@@ -75,25 +77,34 @@ dev5 =
 
 data = [
   {
-    url: 'GET /testpine/device'
+    url: '/testpine/device'
+    method: 'GET'
   },
   {
-    url: 'POST /testpine/device'
+    url: '/testpine/device'
+    method: 'POST'
     body: dev2
   },
   {
-    url: 'POST /testpine/device'
+    url: '/testpine/device'
+    method: 'POST'
     body: dev3
   },
-  {
-    body: [{
-      url: 'POST /testpine/device'
-      "Content-ID": "1"
+  [
+    {
+      url: '/testpine/device'
+      method: 'POST'
       body: dev4
+      headers:
+        "Content-ID": 1
+
     },
     {
-      url: 'PUT /testpine/device/$1'
-      "Content-ID": 2
+      url: '/testpine/device/$1'
+      method: 'PUT'
       body: dev5
-    }]
-}]
+      headers:
+        "Content-ID": 2
+    }
+  ]
+]

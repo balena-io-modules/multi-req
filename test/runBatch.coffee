@@ -1,54 +1,64 @@
-_ = require 'lodash'
 mimemessage = require 'mimemessage'
 Promise = require 'bluebird'
-request  = Promise.promisify(require 'request')
-Promise.promisifyAll(request)
-
-buildReq = (req) ->
-  # This is a normal request
-  if req.url?
-    req['Content-Transfer-Encoding'] = 'binary'
-    if req.body?
-      req['Content-Type'] = 'application/json'
-      b = JSON.stringify(req.body)
-    else
-      req['Content-Type'] = 'application/http'
-      b = ''
-    req.body = req.url + ' HTTP/1.1' + '\r\n' + b
-    return _.omit(req, 'url')
-
-  # This is a changeset
-  else
-    if !_.isArray req.body then throw new Error('body must be an array in changesets')
-    cs = mimemessage.factory {contentType: 'multipart/mixed', body: []}
-    cs.body = _.map req.body, (b) =>
-      newReq = mimemessage.factory buildReq b
-      return setProperHeaders b, newReq
-    req.body = cs.toString()
-    return req
-
-setProperHeaders = (src, dst) ->
-  for h of src
-    if h == 'body' then continue
-    if h == 'url'  then continue
-    else
-      dst.header h, src[h]
-  return dst
+utils = require 'lodash'
+request = Promise.promisify(require 'request')
 
 module.exports = runBatch = (url, data) ->
-  config =
-    method: 'POST'
-    headers:
-      'Content-Type': 'multipart/mixed'
-    url: url
-    json: true
-    multipart:
-      chunked: false
-      # data must be cloned here as map mutates the original array in this case
-      data: _.map (_.cloneDeep data), buildReq
-  request config
-  .then (res) ->
-    return res
+	compiledData = compileBatch(data)
+	multipartHeader = compiledData.header('Content-Type')
 
+	params =
+		method: 'POST'
+		url: url + '$batch'
+		body: compiledData.toString({ noHeaders: true })
+		json: false
+		headers:
+			'Content-Type': multipartHeader
 
-#
+	request(params)
+	.then (res) ->
+		return res.body
+
+compileBatch = (data) ->
+	if !utils.isArray(data)
+		throw new Error('Batch must be passed an array')
+
+	buildReq = (req) =>
+		# This is a changeset
+		if utils.isArray(req)
+			csBody =
+				for cs in req
+					buildReq(cs)
+
+			return mimemessage.factory(
+				contentType: 'multipart/mixed'
+				body: csBody
+			)
+		# This is a normal request
+		else
+			contentTransferEncoding = 'binary'
+			if req.body?
+				contentType = 'application/json'
+				b = JSON.stringify(req.body)
+			else
+				contentType = 'application/http'
+				b = ''
+
+			newReq = mimemessage.factory({
+				contentType: contentType
+				contentTransferEncoding: contentTransferEncoding
+				body: "#{req.method} #{req.url} HTTP/1.1\r\n#{b}"
+			})
+			for own option, value of req.headers
+				newReq.header(option, value)
+
+			return newReq
+
+	batchBody =
+		for req in data
+			buildReq(req)
+
+	return mimemessage.factory(
+		contentType: 'multipart/mixed'
+		body: batchBody
+	)
