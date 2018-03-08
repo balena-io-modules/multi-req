@@ -11,11 +11,12 @@ parseInto = (dst, boundary) ->
 	position = 0
 	d.on 'part', (part) ->
 		slot = position++
-		body =
+		request =
 			headers: {}
 			method: null
 			url: null
 			data: []
+			body: {}
 			_isChangeSet: false
 
 		onEnd = (part) ->
@@ -23,13 +24,13 @@ parseInto = (dst, boundary) ->
 				dst[slot] = (part)
 
 		part.on 'header', (header) ->
-			Object.assign body.headers, header
+			Object.assign request.headers, header
 
 		part.on 'data', (data) ->
-			if m1 = RE_BOUNDARY.exec(body.headers['content-type']?[0])
+			if m1 = RE_BOUNDARY.exec(request.headers['content-type']?[0])
 				pend = new Promise (resolve, reject) ->
-					d1 = parseInto(body.data, m1)
-					finish = onEnd({ _isChangeSet: true, changeSet: body.data })
+					d1 = parseInto(request.data, m1)
+					finish = onEnd({ _isChangeSet: true, changeSet: request.data })
 					d1.on 'finish', ->
 						finish()
 						resolve()
@@ -39,17 +40,19 @@ parseInto = (dst, boundary) ->
 					bodyStream.push(null)
 				d.pending.push(pend)
 			else
-				part.on 'end', onEnd body
+				part.on 'end', onEnd request
 				p = new parser(parser.REQUEST)
 				p.execute(data)
 				p.finish()
 				p.close()
-				body.method = parser.methods[p.info.method]
-				body.url = p.info.url
+				request.method = parser.methods[p.info.method]
+				request.url = p.info.url
 				try
-					body.data = JSON.parse(p.line)
+					request.data = JSON.parse(p.line)
+					request.body = request.data
 				catch error
-					body.data = {}
+					request.data = {}
+					request.body = {}
 
 	return d
 
